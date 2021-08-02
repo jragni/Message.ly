@@ -15,10 +15,10 @@ class User {
     const hashedPW = await bcrypt.hash(password, BCRYPT_WORK_FACTOR);
     const join = new Date();
     const result = await db.query(
-            `INSERT INTO users (username, password, first_name, last_name, phone, join_at)
-             VALUES ($1, $2, $3, $4, $5, $6)
+            `INSERT INTO users (username, password, first_name, last_name, phone, join_at, last_login_at)
+             VALUES ($1, $2, $3, $4, $5, $6, $7)
              RETURNING username, password, first_name, last_name, phone`, 
-             [username, hashedPW, first_name, last_name, phone, join],
+             [username, hashedPW, first_name, last_name, phone, join, join],
       );
       let user = result.rows[0];
      return user;
@@ -45,7 +45,7 @@ class User {
   static async updateLoginTimestamp(username) {
   
     let loginAt = new Date();
-    console.log(username, loginAt, '--------------');
+    // console.log(username, loginAt, '--------------');
     const results = await db.query(
       `UPDATE users
       SET last_login_at = $2
@@ -53,13 +53,20 @@ class User {
       RETURNING username, last_login_at`,
       [username, loginAt]
     );
-    console.log(results.rows[0]);
+    // console.log(results.rows[0]);
   }
 
   /** All: basic info on all users:
    * [{username, first_name, last_name}, ...] */
 
   static async all() {
+      const results = await db.query(
+      `SELECT username,
+              first_name,
+              last_name
+      FROM users`
+      )
+      return results.rows;
   }
 
   /** Get: get user by username
@@ -75,15 +82,15 @@ class User {
     const results = await db.query(
       `SELECT username,
               first_name,
+              last_name,
               phone,
-              join_at
+              join_at,
               last_login_at
        FROM users
        WHERE username=$1`,
        [username]
     );
-    const user = results.rows[0];
-    //return {user.username, user.first_name, user.first_name, user.join_at,user.login_at};
+    return results.rows[0];
   }
 
   /** Return messages from this user.
@@ -100,7 +107,7 @@ class User {
       `SELECT id,
               to_user,
               body,
-              sent_at
+              sent_at,
               read_at
        FROM messages
        WHERE from_user=$1`,
@@ -118,6 +125,18 @@ class User {
    */
 
   static async messagesTo(username) {
+      const results = await db.query(
+      `SELECT id,
+              from_user,
+              body,
+              sent_at,
+              read_at
+       FROM messages
+       WHERE to_user=$1`,
+       [username]
+    );
+    return results.rows;
+      
   }
 }
 
