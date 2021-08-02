@@ -16,9 +16,9 @@ class User {
     const join = new Date();
     const result = await db.query(
             `INSERT INTO users (username, password, first_name, last_name, phone, join_at, last_login_at)
-             VALUES ($1, $2, $3, $4, $5, $6, $7)
+             VALUES ($1, $2, $3, $4, $5, current_timestamp, current_timestamp)
              RETURNING username, password, first_name, last_name, phone`, 
-             [username, hashedPW, first_name, last_name, phone, join, join],
+             [username, hashedPW, first_name, last_name, phone],
       );
       let user = result.rows[0];
      return user;
@@ -105,15 +105,37 @@ class User {
 
     const results = await db.query(
       `SELECT id,
-              to_user,
+              to_username,
               body,
               sent_at,
-              read_at
+              read_at,
+              username,
+              first_name,
+              last_name,
+              phone
        FROM messages
-       WHERE from_user=$1`,
+       JOIN users
+       ON messages.to_username=users.username
+       WHERE from_username=$1`,
        [username]
     );
-    return results.rows;
+    let messages = results.rows;
+    messages = messages.map( (m) => {
+       return {
+           id: m.id,
+           to_user: {
+              username: m.username,
+              first_name: m.first_name,
+              last_name: m.last_name,
+              phone: m.phone
+           },
+           body: m.body,
+           sent_at: m.send_at,
+           read_at: m.read_at
+       } 
+    });
+    console.log(messages);
+    return messages;
   }
 
   /** Return messages to this user.
