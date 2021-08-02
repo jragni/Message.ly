@@ -43,13 +43,17 @@ class User {
   /** Update last_login_at for user */
 
   static async updateLoginTimestamp(username) {
+  
     let loginAt = new Date();
-    await db.query(
+    console.log(username, loginAt, '--------------');
+    const results = await db.query(
       `UPDATE users
       SET last_login_at = $2
-      WHERE username = $1`,
+      WHERE username = $1
+      RETURNING username, last_login_at`,
       [username, loginAt]
     );
+    console.log(results.rows[0]);
   }
 
   /** All: basic info on all users:
@@ -68,6 +72,18 @@ class User {
    *          last_login_at } */
 
   static async get(username) {
+    const results = await db.query(
+      `SELECT username,
+              first_name,
+              phone,
+              join_at
+              last_login_at
+       FROM users
+       WHERE username=$1`,
+       [username]
+    );
+    const user = results.rows[0];
+    //return {user.username, user.first_name, user.first_name, user.join_at,user.login_at};
   }
 
   /** Return messages from this user.
@@ -79,6 +95,18 @@ class User {
    */
 
   static async messagesFrom(username) {
+
+    const results = await db.query(
+      `SELECT id,
+              to_user,
+              body,
+              sent_at
+              read_at
+       FROM messages
+       WHERE from_user=$1`,
+       [username]
+    );
+    return results.rows;
   }
 
   /** Return messages to this user.
