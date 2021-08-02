@@ -45,7 +45,6 @@ class User {
   static async updateLoginTimestamp(username) {
   
     let loginAt = new Date();
-    // console.log(username, loginAt, '--------------');
     const results = await db.query(
       `UPDATE users
       SET last_login_at = $2
@@ -53,7 +52,6 @@ class User {
       RETURNING username, last_login_at`,
       [username, loginAt]
     );
-    // console.log(results.rows[0]);
   }
 
   /** All: basic info on all users:
@@ -105,7 +103,6 @@ class User {
 
     const results = await db.query(
       `SELECT id,
-              to_username,
               body,
               sent_at,
               read_at,
@@ -115,10 +112,11 @@ class User {
               phone
        FROM messages
        JOIN users
-       ON messages.to_username=users.username
+       ON messages.to_username = users.username
        WHERE from_username=$1`,
        [username]
     );
+
     let messages = results.rows;
     messages = messages.map( (m) => {
        return {
@@ -130,11 +128,10 @@ class User {
               phone: m.phone
            },
            body: m.body,
-           sent_at: m.send_at,
+           sent_at: m.sent_at,
            read_at: m.read_at
        } 
     });
-    console.log(messages);
     return messages;
   }
 
@@ -147,17 +144,38 @@ class User {
    */
 
   static async messagesTo(username) {
-      const results = await db.query(
-      `SELECT id,
-              from_user,
-              body,
-              sent_at,
-              read_at
-       FROM messages
-       WHERE to_user=$1`,
-       [username]
+    // getting all messages to a user
+    const results = await db.query(
+      `SELECT id, 
+              body, 
+              sent_at, 
+              read_at,
+              username,
+              first_name,
+              last_name,
+              phone
+        FROM messages
+        JOIN users ON username=messages.from_username
+        WHERE messages.to_username=$1`,
+        [username]
     );
-    return results.rows;
+    let messages = results.rows;
+    messages = messages.map( (m) => {
+       return {
+           id: m.id,
+            from_user: {
+              username: m.username,
+              first_name: m.first_name,
+              last_name: m.last_name,
+              phone: m.phone
+           },
+           body: m.body,
+           sent_at: m.sent_at,
+           read_at: m.read_at
+       } 
+    });
+    console.log(messages);
+    return messages;
       
   }
 }
