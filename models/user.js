@@ -6,42 +6,50 @@ const {BCRYPT_WORK_FACTOR, SECRET_KEY} = require('../config');
 /** User of the site. */
 
 class User {
-  constructor(username, password, firstName, lastName, phone){
-    this.username = username;
-    this.firstName = firstName;
-    this.lastName = lastName;
-    this.phone = phone;
-    this.hashedPW = password;
-  
-  }
   /** Register new user. Returns
    *    {username, password, first_name, last_name, phone}
    */
 
   static async register({ username, password, first_name, last_name, phone }) {
 
-    const hashedPW = bcrypt.hash(password, BCRYPT_WORK_FACTOR);
-    let user = new User(username, hashedPW, first_name, last_name, phone);
+    const hashedPW = await bcrypt.hash(password, BCRYPT_WORK_FACTOR);
+    const join = new Date();
     const result = await db.query(
-            `INSERT INTO users (username, password, first_name, last_name, phone)
-             VALUES ($1, $2, $3, $4, $5)
-             RETURNING 
-             ($1, $2, $3, $4, $5)`, 
-             [user.username, user.hashedPw, user.firstName, user.lastName, user.phone],
-             
+            `INSERT INTO users (username, password, first_name, last_name, phone, join_at)
+             VALUES ($1, $2, $3, $4, $5, $6)
+             RETURNING username, password, first_name, last_name, phone`, 
+             [username, hashedPW, first_name, last_name, phone, join],
       );
-     return {...result.rows[0]};
+      let user = result.rows[0];
+     return user;
 
   }
 
   /** Authenticate: is username/password valid? Returns boolean. */
 
   static async authenticate(username, password) {
+      
+      let userPass = await db.query(
+        `SELECT password
+        FROM users
+        WHERE username = $1`,
+        [username]
+      )
+      let isAuthenticated = await bcrypt.compare(password, userPass.rows[0].password)
+      
+      return isAuthenticated;
   }
 
   /** Update last_login_at for user */
 
   static async updateLoginTimestamp(username) {
+    let loginAt = new Date();
+    await db.query(
+      `UPDATE users
+      SET last_login_at = $2
+      WHERE username = $1`,
+      [username, loginAt]
+    );
   }
 
   /** All: basic info on all users:
@@ -84,6 +92,5 @@ class User {
   static async messagesTo(username) {
   }
 }
-
 
 module.exports = User;
