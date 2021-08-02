@@ -1,14 +1,37 @@
 "use strict";
+const bcrypt = require('bcrypt');
+const db = require('../db');
+const {BCRYPT_WORK_FACTOR, SECRET_KEY} = require('../config');
 
 /** User of the site. */
 
 class User {
-
+  constructor(username, password, firstName, lastName, phone){
+    this.username = username;
+    this.firstName = firstName;
+    this.lastName = lastName;
+    this.phone = phone;
+    this.hashedPW = password;
+  
+  }
   /** Register new user. Returns
    *    {username, password, first_name, last_name, phone}
    */
 
   static async register({ username, password, first_name, last_name, phone }) {
+
+    const hashedPW = bcrypt.hash(password, BCRYPT_WORK_FACTOR);
+    let user = new User(username, hashedPW, first_name, last_name, phone);
+    const result = await db.query(
+            `INSERT INTO users (username, password, first_name, last_name, phone)
+             VALUES ($1, $2, $3, $4, $5)
+             RETURNING 
+             ($1, $2, $3, $4, $5)`, 
+             [user.username, user.hashedPw, user.firstName, user.lastName, user.phone],
+             
+      );
+     return {...result.rows[0]};
+
   }
 
   /** Authenticate: is username/password valid? Returns boolean. */
