@@ -22,8 +22,7 @@ const router = new Router();
  **/
 router.get('/:id', ensureLoggedIn, ensureCorrectToOrFromUser, 
   async(req, res, next) => {
-    // get from res.local.message
-    let message = await Message.get(req.params.id);
+    let message = res.locals.message;
 
     return res.json({message});
 });
@@ -57,7 +56,6 @@ router.post('/', ensureLoggedIn, async(req, res, next) => {
 router.post('/:id/read', ensureLoggedIn, ensureCorrectToUser, 
   async (req, res, next) => {
     const id = req.params.id
-    // Also add res.local.message
     const message = await Message.markRead(id);
     return res.json({message});
   }
