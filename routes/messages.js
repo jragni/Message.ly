@@ -1,5 +1,11 @@
 "use strict";
-
+const {
+  ensureLoggedIn,
+  ensureCorrectUser,
+  ensureCorrectToUser,
+  ensureCorrectToOrFromUser
+} = require('../middleware/auth');
+const Message = require('../models/message');
 const Router = require("express").Router;
 const router = new Router();
 
@@ -15,7 +21,12 @@ const router = new Router();
  * Makes sure that the currently-logged-in users is either the to or from user.
  *
  **/
+router.get('/:id', ensureCorrectToOrFromUser, async(req, res, next) => {
 
+  let message = await Message.get(req.params.id);
+
+  return res.json(message);
+});
 
 /** POST / - post message.
  *
@@ -23,7 +34,16 @@ const router = new Router();
  *   {message: {id, from_username, to_username, body, sent_at}}
  *
  **/
+router.post('/', ensureLoggedIn, async(req, res, next) => {
 
+  let message = await Message.create({
+    from_username: res.locals.user.username,
+    to_username: req.body.to_username,
+    body: req.body.body
+  });
+  return res.json(message);
+  
+});
 
 /** POST/:id/read - mark message as read:
  *
@@ -32,6 +52,7 @@ const router = new Router();
  * Makes sure that the only the intended recipient can mark as read.
  *
  **/
+// check the to_username of the message
 
 
 module.exports = router;
