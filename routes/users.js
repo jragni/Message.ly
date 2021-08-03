@@ -1,5 +1,10 @@
 "use strict";
-
+const {
+	authenticateJWT,
+	ensureLoggedIn,
+	ensureCorrectUser,
+  } = require('../middleware/auth');
+const User = require('../models/user');
 const Router = require("express").Router;
 const router = new Router();
 
@@ -10,6 +15,11 @@ const router = new Router();
  *
  **/
 
+router.get('/', ensureLoggedIn, async (req, res, next)=> {
+	let users = await User.all();
+	console.log('get users: ',req.body)
+	return res.json({users});
+})
 
 /** GET /:username - get detail of users.
  *
@@ -17,6 +27,11 @@ const router = new Router();
  *
  **/
 
+router.get('/:username', ensureCorrectUser, async (res, req, next) => {
+	const user = await User.get(req.params.username);
+	return res.json({user});
+
+});
 
 /** GET /:username/to - get messages to user
  *
@@ -28,6 +43,11 @@ const router = new Router();
  *
  **/
 
+router.get('/:username/to', ensureCorrectUser, async (res, req, resp) => {
+	let username = req.params.username;
+	const messages = await User.messagesTo(username);
+	return res.json({messages});
+});
 
 /** GET /:username/from - get messages from user
  *
@@ -38,5 +58,11 @@ const router = new Router();
  *                 to_user: {username, first_name, last_name, phone}}, ...]}
  *
  **/
+
+ router.get('/:username/from', ensureCorrectUser, async (res, req, resp) => {
+	let username = req.params.username;
+	const messages = await User.messagesFrom(username);
+	return res.json({messages});
+});
 
 module.exports = router;

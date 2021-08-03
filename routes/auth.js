@@ -9,6 +9,7 @@ const router = new Router();
 
 /** POST /login: {username, password} => {token} */
 router.post('/login', async (req, res, next) => {
+	debugger
 	const {username, password} = req.body;
 	let user = await User.get(username);
 	if(user){
