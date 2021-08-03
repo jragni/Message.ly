@@ -51,12 +51,13 @@ function ensureCorrectUser(req, res, next) {
   }
 }
 
-/* Middleware: Validating that the user is the correct user being sent to */
+/* Middleware: Validating that the user is the correct recipient */
 async function ensureCorrectToUser(req, res, next) {
   try {
     let message = await Message.get(req.params.id);
-    if (!res.locals.user ||
-      res.locals.user.username !== message.to_user.username) {
+    
+    const toUsername = message.to_user.username
+    if (res.locals.user.username !== toUsername) {
       throw new UnauthorizedError();
     } else {
       return next();
@@ -65,13 +66,14 @@ async function ensureCorrectToUser(req, res, next) {
     return next(err);
   }
 }
-
+/* Middleware: Validating the user is either the sender or recipient of the message*/ 
 async function ensureCorrectToOrFromUser(req, res, next) {
   try {
     let message = await Message.get(req.params.id);
-    if (!res.locals.user ||
-      res.locals.user.username !== 
-      (message.to_user.username || message.from_user.username)) {
+    const currUsername = res.locals.user.username;
+    const toUsername = message.to_user.username;
+    const fromUsername = message.from_user.username;
+    if (!(currUsername === toUsername || currUsername === fromUsername)) {
       throw new UnauthorizedError();
     } else {
       return next();

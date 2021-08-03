@@ -1,7 +1,6 @@
 "use strict";
 const {
   ensureLoggedIn,
-  ensureCorrectUser,
   ensureCorrectToUser,
   ensureCorrectToOrFromUser
 } = require('../middleware/auth');
@@ -21,11 +20,12 @@ const router = new Router();
  * Makes sure that the currently-logged-in users is either the to or from user.
  *
  **/
-router.get('/:id', ensureCorrectToOrFromUser, async(req, res, next) => {
+router.get('/:id', ensureLoggedIn, ensureCorrectToOrFromUser, 
+  async(req, res, next) => {
 
-  let message = await Message.get(req.params.id);
+    let message = await Message.get(req.params.id);
 
-  return res.json(message);
+    return res.json(message);
 });
 
 /** POST / - post message.
@@ -41,7 +41,15 @@ router.post('/', ensureLoggedIn, async(req, res, next) => {
     to_username: req.body.to_username,
     body: req.body.body
   });
-  return res.json(message);
+  return res.json({
+                  message:{
+                    id: message.id, 
+                    from_username: message.from_username,
+                    to_username: message.to_username,
+                    body: message.body,
+                    sent_at: message.sent_at
+                  }
+  });
   
 });
 
@@ -54,5 +62,12 @@ router.post('/', ensureLoggedIn, async(req, res, next) => {
  **/
 // check the to_username of the message
 
+router.post('/:id/read', ensureLoggedIn, ensureCorrectToUser, 
+  async (req, res, next) => {
+    const id = req.params.id
+    const message = await Message.markRead(id);
+    return res.json(message);
+  }
+);
 
 module.exports = router;
