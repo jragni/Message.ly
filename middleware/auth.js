@@ -69,6 +69,7 @@ async function ensureCorrectToUser(req, res, next) {
 /* Middleware: Validating the user is either the sender or recipient of the message*/ 
 async function ensureCorrectToOrFromUser(req, res, next) {
   try {
+    // Add a property res.local.message
     let message = await Message.get(req.params.id);
     const currUsername = res.locals.user.username;
     const toUsername = message.to_user.username;

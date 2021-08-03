@@ -22,10 +22,10 @@ const router = new Router();
  **/
 router.get('/:id', ensureLoggedIn, ensureCorrectToOrFromUser, 
   async(req, res, next) => {
-
+    // get from res.local.message
     let message = await Message.get(req.params.id);
 
-    return res.json(message);
+    return res.json({message});
 });
 
 /** POST / - post message.
@@ -41,15 +41,7 @@ router.post('/', ensureLoggedIn, async(req, res, next) => {
     to_username: req.body.to_username,
     body: req.body.body
   });
-  return res.json({
-                  message:{
-                    id: message.id, 
-                    from_username: message.from_username,
-                    to_username: message.to_username,
-                    body: message.body,
-                    sent_at: message.sent_at
-                  }
-  });
+  return res.json({message});
   
 });
 
@@ -65,8 +57,9 @@ router.post('/', ensureLoggedIn, async(req, res, next) => {
 router.post('/:id/read', ensureLoggedIn, ensureCorrectToUser, 
   async (req, res, next) => {
     const id = req.params.id
+    // Also add res.local.message
     const message = await Message.markRead(id);
-    return res.json(message);
+    return res.json({message});
   }
 );
 
